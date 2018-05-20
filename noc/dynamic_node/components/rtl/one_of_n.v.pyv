@@ -1,4 +1,3 @@
-
 /*
 Copyright (c) 2015 Princeton University
 All rights reserved.
@@ -25,79 +24,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-// 02/06/2015 14:58:59
-// This file is auto-generated
-// Author: Tri Nguyen
-`include "define.vh"
-`ifdef DEFAULT_NETTYPE_NONE
-`default_nettype none
-`endif
-module sram_2rw_256x66
-(
-input wire MEMCLK,
-input wire RESET_N,
-input wire CEA,
-input wire [7:0] AA,
-input wire RDWENA,
-input wire CEB,
-input wire [7:0] AB,
-input wire RDWENB,
-input wire [65:0] BWA,
-input wire [65:0] DINA,
-output wire [65:0] DOUTA,
-input wire [65:0] BWB,
-input wire [65:0] DINB,
-output wire [65:0] DOUTB,
-input wire [`BIST_OP_WIDTH-1:0] BIST_COMMAND,
-input wire [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DIN,
-output reg [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DOUT,
-input wire [`BIST_ID_WIDTH-1:0] SRAMID
-);
-reg [65:0] cache [255:0];
-
-integer i;
-initial
-begin
-   for (i = 0; i < 256; i = i + 1)
-   begin
-      cache[i] = 0;
-   end
-end
-
-
-
-   reg [65:0] dout_f0;
-
-   assign DOUTA = dout_f0;
-
-   always @ (posedge MEMCLK)
-   begin
-      if (CEA)
-      begin
-         if (RDWENA == 1'b0)
-            cache[AA] <= (DINA & BWA) | (cache[AA] & ~BWA);
-         else
-            dout_f0 <= cache[AA];
-      end
-   end
-
-   
-
-   reg [65:0] dout_f1;
-
-   assign DOUTB = dout_f1;
-
-   always @ (posedge MEMCLK)
-   begin
-      if (CEB)
-      begin
-         if (RDWENB == 1'b0)
-            cache[AB] <= (DINB & BWB) | (cache[AB] & ~BWB);
-         else
-            dout_f1 <= cache[AB];
-      end
-   end
-
-   
+<%
+import os
+import sys
+sys.path.append(os.environ["DV_ROOT"]+"/design/chip/tile/dynamic_node/parameter")
+import dynamic_node_para_define
+DYNAMIC_NODE_PORT = dynamic_node_para_define.DYNAMIC_NODE_PORT
+DYNAMIC_NODE_PORT_LOG2 = dynamic_node_para_define.DYNAMIC_NODE_PORT_LOG2
+%>
+module one_of_n(
+  <%
+  print ""
+  dynamic_node_para_define.print_ports("  in%d,")
+  %>
+  sel,
+  out);
+    parameter WIDTH = 8;
+    parameter BHC = 10;
+    input [<%= DYNAMIC_NODE_PORT_LOG2 - 1%>:0] sel;
+    <% dynamic_node_para_define.print_ports_oneline("input [WIDTH-1:0] ", "in%d,")%>
+    output reg [WIDTH-1:0] out;
+    always@(*)
+    begin
+        case(sel)
+        <%
+        print ""
+        for a in range (DYNAMIC_NODE_PORT):
+          s = "            %d'd%d:out=in%d;" % (DYNAMIC_NODE_PORT_LOG2, a, a)
+          print s
+        %>
+            default:; // indicates null
+        endcase
+    end
 endmodule
+
+

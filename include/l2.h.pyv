@@ -26,9 +26,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 //==================================================================================================
-//  Filename      : l2.vh
+//  Filename      : l2.h.pyv
 //  Created On    : 2014-02-20
-//  Last Modified : 2014-02-20
 //  Revision      :
 //  Author        : Yaosheng Fu
 //  Company       : Princeton University
@@ -38,6 +37,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 //
 //==================================================================================================
+
+<%
+import math
+import pyhplib
+from pyhplib import *
+
+L2_LINE_SIZE = 64
+# L2_SIZE = CONFIG_L2_ENTRY_COUNT * L2_LINE_SIZE
+L2_SIZE = CONFIG_L2_SIZE
+L2_WAYS = CONFIG_L2_ASSOCIATIVITY
+#L2_SIZE = 65536
+#L2_WAYS  = 4
+L2_NUM_SETS = int(L2_SIZE / (L2_LINE_SIZE * L2_WAYS))
+%>
 
 
 // Input buffer for pipeline1
@@ -88,50 +101,84 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // L2 cache configuration
 
 `define BYTE_TO_BIT              8
-`define L2_SIZE                  65536
-`define L2_SIZE_WIDTH            16
 
-`define L2_LINE_SIZE             64
-`define L2_LINE_SIZE_WIDTH       6
+<%
+print "`define L2_SIZE                  %d" % (L2_SIZE)
+print "`define L2_SIZE_WIDTH            %d" % math.log(L2_SIZE, 2)
+%>
+
+//`define L2_SIZE                  65536
+//`define L2_SIZE_WIDTH            16
+
+
+<%
+print "`define L2_LINE_SIZE                  %d" % (L2_LINE_SIZE)
+print "`define L2_LINE_SIZE_WIDTH            %d" % math.log(L2_LINE_SIZE, 2)
+%>
+
+//`define L2_LINE_SIZE             64
+//`define L2_LINE_SIZE_WIDTH       6
 
 `define L2_ENTRY_SIZE            16
 `define L2_ENTRY_SIZE_WIDTH      4
 
-`define L2_WAYS                  4
-`define L2_WAYS_WIDTH            2
-`define L2_WAY_0                 2'b00
-`define L2_WAY_1                 2'b01
-`define L2_WAY_2                 2'b10
-`define L2_WAY_3                 2'b11
+
+<%
+print "`define L2_WAYS                  %d" % (L2_WAYS)
+print "`define L2_WAYS_WIDTH            %d" % (math.log(L2_WAYS,2))
+for i in range(L2_WAYS):
+    print "`define L2_WAY_%d                 %d'd%d" % (i, math.log(L2_WAYS,2), i)
+%>
+
+//`define L2_WAYS                  4
+//`define L2_WAYS_WIDTH            2
+//`define L2_WAY_0                 2'b00
+//`define L2_WAY_1                 2'b01
+//`define L2_WAY_2                 2'b10
+//`define L2_WAY_3                 2'b11
 
 `define L2_OFFSET_WIDTH         `L2_LINE_SIZE_WIDTH
 
 
 
 // Tag array
-
-`define L2_TAG_INDEX_WIDTH      8
-`define L2_TAG_WIDTH            26
-`define L2_TAG_WAY_WIDTH        26
-`define L2_TAG_ARRAY_WIDTH      104
+<%
+print "`define L2_TAG_INDEX_WIDTH      %d" % (math.log(L2_NUM_SETS, 2))
+print "`define L2_TAG_WIDTH            %d" % (40-6-math.log(L2_NUM_SETS,2))
+print "`define L2_TAG_WAY_WIDTH        %d" % (40-6-math.log(L2_NUM_SETS,2))
+print "`define L2_TAG_ARRAY_WIDTH      %d" % (L2_WAYS*(40-6-math.log(L2_NUM_SETS,2)))
+print "`define L2_TAG_ARRAY_HEIGHT     %d" % (L2_NUM_SETS)
+print "`define L2_TAG_ARRAY_HEIGHT_LOG2 %d" % (math.log(L2_NUM_SETS, 2))
+%>
+//`define L2_TAG_INDEX_WIDTH      8
+//`define L2_TAG_WIDTH            26
+//`define L2_TAG_WAY_WIDTH        26
+//`define L2_TAG_ARRAY_WIDTH      104
 
 
 // Tag Address decomposition 
 
-`define L2_TAG_OFFSET           5:0
-`define L2_TAG_INDEX            13:6
-`define L2_TAG                  39:14
-`define L2_TAG_PLUS_INDEX       39:6
+`define L2_TAG_OFFSET           `L2_LINE_SIZE_WIDTH-1:0
+`define L2_TAG_INDEX            `L2_LINE_SIZE_WIDTH+`L2_TAG_INDEX_WIDTH-1:`L2_LINE_SIZE_WIDTH
+`define L2_TAG                  39:`L2_LINE_SIZE_WIDTH+`L2_TAG_INDEX_WIDTH
+//`define L2_TAG_INDEX            13:6
+//`define L2_TAG                  39:14
+`define L2_TAG_PLUS_INDEX       39:`L2_LINE_SIZE_WIDTH
 
 //Data array
 
 `define L2_DATA_ARRAY_WIDTH         144
+<%
+print "`define L2_DATA_ARRAY_HEIGHT     %d" % (L2_NUM_SETS*L2_WAYS*4)
+print "`define L2_DATA_ARRAY_HEIGHT_LOG2     %d" % (math.log(L2_NUM_SETS*L2_WAYS*4,2))
+%>
 `define L2_DATA_DATA_WIDTH          128
 `define L2_DATA_PARITY_WIDTH        16
 `define L2_DATA_ECC_TOTAL_WIDTH     72
 `define L2_DATA_ECC_DATA_WIDTH      64
 `define L2_DATA_ECC_PARITY_WIDTH    8
-`define L2_DATA_INDEX_WIDTH         12
+`define L2_DATA_INDEX_WIDTH         `L2_TAG_INDEX_WIDTH+`L2_WAYS_WIDTH+2
+//`define L2_DATA_INDEX_WIDTH         12 
 `define L2_DATA_OFFSET_WIDTH        4
 `define L2_DATA_SUBLINE_WIDTH       2
 `define L2_DATA_SUBLINE_0           2'd0
@@ -150,10 +197,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //Dir array
 
-`define L2_DIR_INDEX_WIDTH      10 
+
+`define L2_DIR_INDEX_WIDTH      `L2_TAG_INDEX_WIDTH+`L2_WAYS_WIDTH
+//`define L2_DIR_INDEX_WIDTH      10 
 `define L2_DIR_SHARER_BITS      64
 `define L2_DIR_ARRAY_WIDTH      `L2_DIR_SHARER_BITS
-
+<%
+print "`define L2_DIR_ARRAY_HEIGHT     %d" % (L2_NUM_SETS*L2_WAYS)
+print "`define L2_DIR_ARRAY_HEIGHT_LOG2     %d" % (math.log(L2_NUM_SETS*L2_WAYS,2))
+%>
 //State array
 
 `define L2_STATE_INDEX_WIDTH    `L2_TAG_INDEX_WIDTH
@@ -197,11 +249,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define L2_LRU_CLR              1'b0
 
 
-`define L2_STATE_ARRAY_WIDTH    66
 `define L2_STATE_WAY_WIDTH      15
-`define L2_STATE_DATA_WIDTH     60
-
-   
+`define L2_STATE_DATA_WIDTH     `L2_STATE_WAY_WIDTH*`L2_WAYS
+`define L2_STATE_ARRAY_WIDTH    `L2_STATE_DATA_WIDTH+`L2_WAYS_WIDTH+`L2_WAYS
+<%
+print "`define L2_STATE_ARRAY_HEIGHT     %d" % (L2_NUM_SETS)
+print "`define L2_STATE_ARRAY_HEIGHT_LOG2     %d" % (math.log(L2_NUM_SETS,2))
+%>
 
 // State decomposition 
 
@@ -211,9 +265,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define L2_STATE_DI             10
 `define L2_STATE_VD             12:11
 `define L2_STATE_MESI           14:13
-`define L2_STATE_LRU            63:60
-`define L2_STATE_RB             65:64
-`define L2_STATE_DATA           59:0
+`define L2_STATE_LRU            `L2_STATE_DATA_WIDTH+`L2_WAYS-1:`L2_STATE_DATA_WIDTH
+`define L2_STATE_RB             `L2_STATE_ARRAY_WIDTH-1:`L2_STATE_DATA_WIDTH+`L2_WAYS
+`define L2_STATE_DATA           `L2_STATE_DATA_WIDTH-1:0
 
 
 //MSHR array
@@ -230,26 +284,46 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define L2_MSHR_STATE_PENDING   2'd2
 
 
-`define L2_MSHR_ARRAY_WIDTH     122
+`define L2_MSHR_ARRAY_WIDTH     120+`L2_WAYS_WIDTH
 
 `define L2_MSHR_CMP_ADDR        13:6
 `define L2_MSHR_ADDR            39:0
-`define L2_MSHR_WAY             41:40
-`define L2_MSHR_MSHRID          49:42
-`define L2_MSHR_CACHE_TYPE      50
-`define L2_MSHR_DATA_SIZE       53:51
-`define L2_MSHR_MSG_TYPE        61:54
-`define L2_MSHR_L2_MISS         62
-`define L2_MSHR_SRC_CHIPID      76:63
-`define L2_MSHR_SRC_X           84:77
-`define L2_MSHR_SRC_Y           92:85
-`define L2_MSHR_SRC_FBITS       96:93
-`define L2_MSHR_SDID            106:97
-`define L2_MSHR_LSID            112:107      
-`define L2_MSHR_MISS_LSID       118:113
-`define L2_MSHR_SMC_MISS        119
-`define L2_MSHR_RECYCLED        120
-`define L2_MSHR_INV_FWD_PENDING 121
+`define L2_MSHR_WAY             39+`L2_WAYS_WIDTH:40
+`define L2_MSHR_MSHRID          47+`L2_WAYS_WIDTH:40+`L2_WAYS_WIDTH
+`define L2_MSHR_CACHE_TYPE      48+`L2_WAYS_WIDTH
+`define L2_MSHR_DATA_SIZE       51+`L2_WAYS_WIDTH:49+`L2_WAYS_WIDTH
+`define L2_MSHR_MSG_TYPE        59+`L2_WAYS_WIDTH:52+`L2_WAYS_WIDTH
+`define L2_MSHR_L2_MISS         60+`L2_WAYS_WIDTH
+`define L2_MSHR_SRC_CHIPID      74+`L2_WAYS_WIDTH:61+`L2_WAYS_WIDTH
+`define L2_MSHR_SRC_X           82+`L2_WAYS_WIDTH:75+`L2_WAYS_WIDTH
+`define L2_MSHR_SRC_Y           90+`L2_WAYS_WIDTH:83+`L2_WAYS_WIDTH
+`define L2_MSHR_SRC_FBITS       94+`L2_WAYS_WIDTH:91+`L2_WAYS_WIDTH
+`define L2_MSHR_SDID            104+`L2_WAYS_WIDTH:95+`L2_WAYS_WIDTH
+`define L2_MSHR_LSID            110+`L2_WAYS_WIDTH:105+`L2_WAYS_WIDTH      
+`define L2_MSHR_MISS_LSID       116+`L2_WAYS_WIDTH:111+`L2_WAYS_WIDTH
+`define L2_MSHR_SMC_MISS        117+`L2_WAYS_WIDTH
+`define L2_MSHR_RECYCLED        118+`L2_WAYS_WIDTH
+`define L2_MSHR_INV_FWD_PENDING 119+`L2_WAYS_WIDTH
+
+
+//`define L2_MSHR_CMP_ADDR        13:6
+//`define L2_MSHR_ADDR            39:0
+//`define L2_MSHR_WAY             41:40
+//`define L2_MSHR_MSHRID          49:42
+//`define L2_MSHR_CACHE_TYPE      50
+//`define L2_MSHR_DATA_SIZE       53:51
+//`define L2_MSHR_MSG_TYPE        61:54
+//`define L2_MSHR_L2_MISS         62
+//`define L2_MSHR_SRC_CHIPID      76:63
+//`define L2_MSHR_SRC_X           84:77
+//`define L2_MSHR_SRC_Y           92:85
+//`define L2_MSHR_SRC_FBITS       96:93
+//`define L2_MSHR_SDID            106:97
+//`define L2_MSHR_LSID            112:107      
+//`define L2_MSHR_MISS_LSID       118:113
+//`define L2_MSHR_SMC_MISS        119
+//`define L2_MSHR_RECYCLED        120
+//`define L2_MSHR_INV_FWD_PENDING 121
 
 
 //SMC array
@@ -271,6 +345,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define L2_SMC_ADDR_SDID        15:6
 `define L2_SMC_ADDR_LSID        5:0
 
+`define L2_SDID_WIDTH           10
+`define L2_LSID_WIDTH           6
 
 `define L2_SMC_ARRAY_WIDTH      138
 
@@ -305,7 +381,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 `define L2_ADDR_TYPE_WIDTH          8
 `define L2_ADDR_OP_WIDTH            2
 `define L2_ADDR_WAY_WIDTH           `L2_WAY_WIDTH
-`define L2_ADDR_WAY                 15:14
+`define L2_ADDR_WAY                 `L2_LINE_SIZE_WIDTH+`L2_TAG_INDEX_WIDTH+`L2_WAYS_WIDTH-1:`L2_LINE_SIZE_WIDTH+`L2_TAG_INDEX_WIDTH
 `define L2_ADDR_TYPE                39:32
 `define L2_ADDR_OP                  31:30
 `define L2_ADDR_TYPE_DATA_ACCESS    8'ha0

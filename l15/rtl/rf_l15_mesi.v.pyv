@@ -46,7 +46,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // 12/17 timing fix: move write to s3
 
-module l15_rf_128x8(
+module rf_l15_mesi(
    input wire clk,
    input wire rst_n,
 

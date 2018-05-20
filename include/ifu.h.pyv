@@ -25,7 +25,7 @@
 /*
 //
 //  Module Name: ifu.h
-//  Description:	
+//  Description:  
 //  All ifu defines
 */
 
@@ -36,6 +36,8 @@
 `define IC_SZ      16384
 // IC_IDX_HI = log(icache_size/4ways) - 1
 `define IC_IDX_HI  11
+
+`define IC_SET_IDX_HI  6
 
 // !!IMPORTANT!! a change to IC_LINE_SZ will mean a change to the code as
 //   well.  Unfortunately this has not been properly parametrized.

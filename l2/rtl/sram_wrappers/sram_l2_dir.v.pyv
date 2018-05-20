@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) 2015 Princeton University
 All rights reserved.
@@ -25,59 +26,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-// 17/02/2015 17:18:31
+// 02/06/2015 14:58:59
 // This file is auto-generated
 // Author: Tri Nguyen
-`include "define.vh"
-`ifdef L15_EXTRA_DEBUG
-`default_nettype none
-`endif
-module sram_1rw_256x104
-(
-input wire MEMCLK,
-input wire RESET_N,
-input wire CE,
-input wire [7:0] A,
-input wire RDWEN,
-input wire [103:0] BW,
-input wire [103:0] DIN,
-output wire [103:0] DOUT,
 
-input wire [`BIST_OP_WIDTH-1:0] BIST_COMMAND,
-input wire [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DIN,
-output reg [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DOUT,
-input wire [`BIST_ID_WIDTH-1:0] SRAMID
-);
+<%
+  import pyhplib
+  from pyhplib import * 
 
-wire           write_en;
-wire           read_en;
-wire  [15:0]   wen_mask;
-wire  [127:0]  data_in;
-wire  [127:0]  data_out;
-
-
-assign write_en   = CE & (RDWEN == 1'b0);
-assign read_en    = CE & (RDWEN == 1'b1);
-assign wen_mask   = {{4{BW[78]}},{4{BW[52]}},{4{BW[26]}},{4{BW[0]}}};
-assign data_in    = {6'b0,DIN[103:78],6'b0,DIN[77:52],6'b0,DIN[51:26],6'b0,DIN[25:0]};
-assign DOUT       = {data_out[121:96],data_out[89:64],data_out[57:32],data_out[25:0]};
-
-always @*
-   BIST_DOUT = {`SRAM_WRAPPER_BUS_WIDTH{1'b0}};
-
-
-bram_256x128 mem (
-   .clka    (MEMCLK     ),
-   .ena     (write_en   ),
-   .wea     (wen_mask   ),
-   .addra   (A          ),
-   .dina    (data_in    ),
-   .clkb    (MEMCLK     ),
-   .enb     (read_en    ),
-   .addrb   (A          ),
-   .doutb   (data_out   )
-);
-
-
-
-endmodule
+  pyhplib.MakeGenericCacheDefine(
+    modulename="sram_l2_dir", 
+    type="1rw", 
+    # height=CONFIG_SRAM_L2_DIR_HEIGHT, 
+    # width=CONFIG_SRAM_L2_DIR_WIDTH
+    height_define="`L2_DIR_ARRAY_HEIGHT",
+    heightlog2_define="`L2_DIR_ARRAY_HEIGHT_LOG2",
+    width_define="`L2_DIR_ARRAY_WIDTH"
+    );
+%>

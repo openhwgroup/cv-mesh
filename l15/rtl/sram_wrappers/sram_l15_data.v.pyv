@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) 2015 Princeton University
 All rights reserved.
@@ -25,75 +26,58 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+// 02/06/2015 14:58:59
+// This file is auto-generated
+// Author: Tri Nguyen
 
-//==================================================================================================
-//  Filename      : l15_rf_128x8.v
-//  Created On    : 2014-02-04 18:14:58
-//  Last Modified : 2014-02-13 18:30:34
-//  Revision      :
-//  Author        : Tri Nguyen
-//  Company       : Princeton University
-//  Email         : trin@princeton.edu
-//
-//  Description   :
-//
-//
-//==================================================================================================
-//l15_rf_128x8.v
 
-//`timescale 1 ns / 10 ps
-//`default_nettype none
-module l15_rf_128x6(
-   input wire clk,
-   input wire rst_n,
+`include "define.vh"
+`ifdef DEFAULT_NETTYPE_NONE
+`default_nettype none
+`endif
+module sram_l15_data
+(
+input wire MEMCLK,
+input wire RESET_N,
+input wire CE,
+input wire [9-1:0] A,
+input wire RDWEN,
+input wire [128-1:0] BW,
+input wire [128-1:0] DIN,
+output wire [128-1:0] DOUT,
+input wire [`BIST_OP_WIDTH-1:0] BIST_COMMAND,
+input wire [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DIN,
+output reg [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DOUT,
+input wire [`BIST_ID_WIDTH-1:0] SRAMID
+);
+reg [128-1:0] cache [512-1:0];
 
-   input wire read_valid,
-   input wire [6:0] read_index,
-
-   input wire write_valid,
-   input wire [6:0] write_index,
-   input wire [5:0] write_mask,
-   input wire [5:0] write_data,
-
-   output wire [5:0] read_data
-   );
-
-// reg read_valid_f;
-reg [6:0] read_index_f;
-
-reg [5:0] regfile [0:127];
-
-always @ (posedge clk)
+integer i;
+initial
 begin
-   if (!rst_n)
+   for (i = 0; i < 512; i = i + 1)
    begin
-      read_index_f <= 0;
+      cache[i] = 0;
    end
-   else
-   if (read_valid)
-      read_index_f <= read_index;
-   else
-      read_index_f <= read_index_f;
 end
 
-// read port
-assign read_data = regfile[read_index_f];
 
-// Write port
-always @ (posedge clk)
-begin
-   if (!rst_n)
+
+   reg [128-1:0] dout_f;
+
+   assign DOUT = dout_f;
+
+   always @ (posedge MEMCLK)
    begin
-      <%
-         for i in range (128):
-            print "regfile[%d] <= 6'b0;" % (i)
-      %>
-      // regfile <= 1024'b0;
+      if (CE)
+      begin
+         if (RDWEN == 1'b0)
+            cache[A] <= (DIN & BW) | (cache[A] & ~BW);
+         else
+            dout_f <= cache[A];
+      end
    end
-   else
-   if (write_valid)
-   begin
-      regfile[write_index] <= (write_data & write_mask) | (regfile[write_index] & ~write_mask);
-   end
-end
+   
 endmodule
+
+

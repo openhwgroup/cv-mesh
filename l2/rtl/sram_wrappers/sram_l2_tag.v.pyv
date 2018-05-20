@@ -1,3 +1,4 @@
+
 /*
 Copyright (c) 2015 Princeton University
 All rights reserved.
@@ -25,47 +26,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-module sram_1rw_512x128
-(
-input wire MEMCLK,
-input wire RESET_N,
-input wire CE,
-input wire [8:0] A,
-input wire RDWEN,
-input wire [127:0] BW,
-input wire [127:0] DIN,
-output wire [127:0] DOUT,
+// 02/06/2015 14:58:59
+// This file is auto-generated
+// Author: Tri Nguyen
 
-input wire [`BIST_OP_WIDTH-1:0] BIST_COMMAND,
-input wire [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DIN,
-output reg [`SRAM_WRAPPER_BUS_WIDTH-1:0] BIST_DOUT,
-input wire [`BIST_ID_WIDTH-1:0] SRAMID
-);
+<%
+  import pyhplib
+  from pyhplib import * 
 
-wire           write_en;
-wire           read_en;
-wire  [15:0]   wen_mask;
-
-
-assign write_en   = CE & (RDWEN == 1'b0);
-assign read_en    = CE & (RDWEN == 1'b1);
-assign wen_mask   = {BW[120],BW[112],BW[104],BW[96],BW[88],BW[80],BW[72],BW[64],
-                     BW[56] ,BW[48], BW[40], BW[32],BW[24],BW[16],BW[8], BW[0]};
-
-always @*
-   BIST_DOUT = {`SRAM_WRAPPER_BUS_WIDTH{1'b0}};
-
-
-bram_512x128 mem (
-   .clka    (MEMCLK     ),
-   .ena     (write_en   ),
-   .wea     (wen_mask   ),
-   .addra   (A          ),
-   .dina    (DIN        ),
-   .clkb    (MEMCLK     ),
-   .enb     (read_en    ),
-   .addrb   (A          ),
-   .doutb   (DOUT       )
-);
-
-endmodule
+  pyhplib.MakeGenericCacheDefine(
+    modulename="sram_l2_tag", 
+    type="1rw", 
+    #height=CONFIG_SRAM_L2_TAG_HEIGHT, 
+    #width=CONFIG_SRAM_L2_TAG_WIDTH
+    height_define="`L2_TAG_ARRAY_HEIGHT",
+    heightlog2_define="`L2_TAG_ARRAY_HEIGHT_LOG2",
+    width_define="`L2_TAG_ARRAY_WIDTH"
+    );
+%>

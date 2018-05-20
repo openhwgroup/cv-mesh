@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================================
 //  Filename      : l15_rf_128x8.v
 //  Created On    : 2014-02-04 18:14:58
-//  Last Modified : 2014-12-18 17:10:02
+//  Last Modified : 2014-02-13 18:30:34
 //  Revision      :
 //  Author        : Tri Nguyen
 //  Company       : Princeton University
@@ -41,10 +41,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //==================================================================================================
 //l15_rf_128x8.v
 
-// trin timing fix 12/16: move read s3 to s2
-// timing 12/17: move write to s2 to s3
-
-module l15_rf_128x12(
+//`timescale 1 ns / 10 ps
+//`default_nettype none
+module rf_l15_lruarray(
    input wire clk,
    input wire rst_n,
 
@@ -53,70 +52,48 @@ module l15_rf_128x12(
 
    input wire write_valid,
    input wire [6:0] write_index,
-   input wire [11:0] write_mask,
-   input wire [11:0] write_data,
+   input wire [5:0] write_mask,
+   input wire [5:0] write_data,
 
-   output wire [11:0] read_data
+   output wire [5:0] read_data
    );
 
-// reg [11:0] data_out_f;
+// reg read_valid_f;
+reg [6:0] read_index_f;
 
-// reg [11:0] regfile [0:127];
-
-// always @ (posedge clk)
-// begin
-//    if (read_valid)
-//       data_out_f <= regfile[read_index];
-// end
-
-
-// assign read_data = data_out_f;
-
-
-reg [11:0] data_out_f;
-reg [6:0] write_index_f;
-reg [11:0] write_data_f;
-reg [11:0] write_mask_f;
-reg write_valid_f;
-
-reg [11:0] regfile [0:127];
+reg [5:0] regfile [0:127];
 
 always @ (posedge clk)
 begin
+   if (!rst_n)
+   begin
+      read_index_f <= 0;
+   end
+   else
    if (read_valid)
-      data_out_f <= regfile[read_index];
+      read_index_f <= read_index;
+   else
+      read_index_f <= read_index_f;
 end
 
-
-assign read_data = data_out_f;
+// read port
+assign read_data = regfile[read_index_f];
 
 // Write port
-
-always @ (posedge clk)
-begin
-   write_valid_f <= write_valid;
-   if (write_valid)
-   begin
-      write_data_f <= write_data;
-      write_index_f <= write_index;
-      write_mask_f <= write_mask;
-   end
-end
-
 always @ (posedge clk)
 begin
    if (!rst_n)
    begin
       <%
          for i in range (128):
-            print "regfile[%d] <= 12'b0;" % (i)
+            print "regfile[%d] <= 6'b0;" % (i)
       %>
+      // regfile <= 1024'b0;
    end
    else
-   if (write_valid_f)
+   if (write_valid)
    begin
-      // regfile[write_index] <= (write_data & write_mask) | (regfile[write_index] & ~write_mask);
-      regfile[write_index_f] <= (write_data_f & write_mask_f) | (regfile[write_index_f] & ~write_mask_f);
+      regfile[write_index] <= (write_data & write_mask) | (regfile[write_index] & ~write_mask);
    end
 end
 endmodule
